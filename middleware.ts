@@ -21,7 +21,6 @@ const webhookProtected = createRouteMatcher(["/api/webhook(.*)"])
 
 export default clerkMiddleware((auth, request) => {
     if (eventsProtected(request)) auth().protect()
-    if (webhookProtected(request)) auth().protect()
   })
 
 export const config = {
