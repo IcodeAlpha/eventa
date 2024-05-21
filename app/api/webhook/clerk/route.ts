@@ -5,12 +5,10 @@ import { createUser, deleteUser, updateUser } from '@/lib/actions/user.actions'
 import { NextResponse } from 'next/server'
 
 export async function POST(req: Request) {
-
-  // You can find this in the Clerk Dashboard -> Webhooks -> choose the endpoint
-  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
-
+  // Ensure WEBHOOK_SECRET is set
+  const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
   if (!WEBHOOK_SECRET) {
-    throw new Error('Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local')
+    return NextResponse.json({ error: 'WEBHOOK_SECRET is not set' }, { status: 500 });
   }
 
   // Get the headers
@@ -21,19 +19,17 @@ export async function POST(req: Request) {
 
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return new Response('Error occured -- no svix headers', {
-      status: 400
-    })
+    return NextResponse.json({ error: 'Missing svix headers' }, { status: 400 });
   }
 
   // Get the body
-  const payload = await req.json()
+  const payload = await req.json();
   const body = JSON.stringify(payload);
 
   // Create a new Svix instance with your secret.
   const wh = new Webhook(WEBHOOK_SECRET);
 
-  let evt: WebhookEvent
+  let evt: WebhookEvent;
 
   // Verify the payload with the headers
   try {
@@ -41,67 +37,59 @@ export async function POST(req: Request) {
       "svix-id": svix_id,
       "svix-timestamp": svix_timestamp,
       "svix-signature": svix_signature,
-    }) as WebhookEvent
+    }) as WebhookEvent;
   } catch (err) {
     console.error('Error verifying webhook:', err);
-    return new Response('Error occured', {
-      status: 400
-    })
+    return NextResponse.json({ error: 'Error verifying webhook' }, { status: 400 });
   }
 
-  // Do something with the payload
-  // For this guide, you simply log the payload to the console
-  const { id } = evt.data;
+  // Handle the event
   const eventType = evt.type;
+  const { id } = evt.data;
+  if(!id){
+    return NextResponse.json("No event Id")
+  }
 
-  if(eventType === 'user.created') {
-    const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
+  switch (eventType) {
+    case 'user.created':
+      const { email_addresses, image_url, first_name, last_name, username } = evt.data;
 
-    const user = {
+      const newUser = await createUser({
         clerkId: id,
         email: email_addresses[0].email_address,
         username: username!,
-        firstName: first_name as string,
-        lastName: last_name as string,
+        firstName: first_name || '',
+        lastName: last_name || '',
         photo: image_url,
-    }
+      });
 
-    const newUser = await createUser(user);
+      if (newUser) {
+        await clerkClient.users.updateUserMetadata(id, {
+          publicMetadata: {
+            userId: newUser._id,
+          },
+        });
+      }
 
-    if(newUser) {
-      await clerkClient.users.updateUserMetadata(id, {
-        publicMetadata: {
-          userId: newUser._id
-        }
-      })
-    }
+      return NextResponse.json({ message: 'OK', user: newUser });
 
-    return NextResponse.json({ message: 'OK', user: newUser })
+    case 'user.updated':
+      const updatedUser = await updateUser(id, {
+        firstName: evt.data.first_name || '',
+        lastName: evt.data.last_name || '',
+        username: evt.data.username || '',
+        photo: evt.data.image_url || '',
+      });
+
+      return NextResponse.json({ message: 'OK', user: updatedUser });
+
+    case 'user.deleted':
+      const deletedUser = await deleteUser(id);
+
+      return NextResponse.json({ message: 'OK', user: deletedUser });
+
+    default:
+      console.log('Unhandled event type:', eventType);
+      return NextResponse.json({ message: 'Unhandled event type' }, { status: 400 });
   }
-
-  if (eventType === 'user.updated') {
-    const {id, image_url, first_name, last_name, username } = evt.data
-
-    const user = {
-      firstName: first_name as string,
-      lastName: last_name as string,
-      username: username!,
-      photo: image_url,
-    }
-
-    const updatedUser = await updateUser(id, user)
-
-    return NextResponse.json({ message: 'OK', user: updatedUser })
-  }
-
-  if (eventType === 'user.deleted') {
-    const { id } = evt.data
-
-    const deletedUser = await deleteUser(id!)
-
-    return NextResponse.json({ message: 'OK', user: deletedUser })
-  }
-  
-
-  return new Response('', { status: 200 })
 }
