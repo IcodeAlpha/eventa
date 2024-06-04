@@ -17,7 +17,7 @@ const MobileNav = () => {
     <Sheet>
         <SheetTrigger className="align-middle">
             <Image 
-                src=".menu.svg"
+                src="/menu.svg"
                 alt="menu"
                 width={24}
                 height={24}

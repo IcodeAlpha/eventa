@@ -25,7 +25,7 @@ export const DeleteConfirmation = ({ eventId }: { eventId: string }) => {
   return (
     <Dialog>
       <DialogTrigger>
-        <Image src="/assets/icons/delete.svg" alt="edit" width={20} height={20} />
+        <Image src="/delete.svg" alt="edit" width={20} height={20} />
       </DialogTrigger>
 
       <DialogContent className="bg-white">

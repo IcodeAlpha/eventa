@@ -52,7 +52,7 @@ SearchParamProps) => {
 
                 <div className="flex flex-col gap-5">
                     <div className='flex gap-2 md:gap-3'>
-                        <Image src="calendar.svg" alt="calendar" width={32} height={32} />
+                        <Image src="/calendar.svg" alt="calendar" width={32} height={32} />
                         <div className="p-medium-16 lg:p-regular-20 flex flex-wrap items-center">
                             <p>{formatDateTime(event.startDateTime).dateOnly} - {' '}
                                 {formatDateTime(event.startDateTime).timeOnly}
@@ -64,7 +64,7 @@ SearchParamProps) => {
                     </div>
 
                     <div className="p-regular-20 flex items-center gap-3">
-                        <Image src="location.svg" alt="location" width={32} height={32} />
+                        <Image src="/location.svg" alt="location" width={32} height={32} />
                         <p className="p-medium-16 lg:p-regular-20">{event.location}</p>
                     </div>
                 </div>
@@ -90,9 +90,9 @@ SearchParamProps) => {
           emptyTitle="No Events Found"
           emptyStateSubtext="Come back later"
           collectionType="All_Events"
-          limit={6}
-          page={1}
-          totalPages={2}
+          limit={3}
+          page={searchParams.page as string}
+          totalPages={relatedEvents?.totalPages}
         />
     </section>
 
