@@ -16,7 +16,7 @@ const CheckoutButton = ({ event }: { event: IEvent}) => {
     <div className="flex items-center gap-3">
         {/* Cannot buy past event */}
         {hasEventFinished ? (
-            <p className="p-2 text-red-400">Sorry, tickets are no longer available.</p>
+            <p className="p-2 text-red-400">Sorry, Event is not available.</p>
         ): (
             <>
                 <SignedOut>
